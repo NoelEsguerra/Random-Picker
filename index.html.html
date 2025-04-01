@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Picker App</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* Custom styles */
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0f3c57;
+    color: white;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+
+  .bg-gradient-blue {
+    background: linear-gradient(135deg, #1a365d, #2a4365, #1a365d);
+  }
+
+  .bg-gradient-green {
+    background: linear-gradient(135deg, #276749, #2f855a, #276749);
+  }
+
+  .bg-gradient-red {
+    background: linear-gradient(135deg, #9b2c2c, #c53030, #9b2c2c);
+  }
+
+  .bg-gradient-purple {
+    background: linear-gradient(135deg, #553c9a, #6b46c1, #553c9a);
+  }
+
+  .bg-gradient-gray {
+    background: linear-gradient(135deg, #2d3748, #4a5568, #2d3748);
+  }
+
+  .card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background: linear-gradient(to right, #ed8936, #dd6b20);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(to right, #dd6b20, #c05621);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(to right, #667eea, #764ba2);
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background: linear-gradient(to right, #5a67d8, #6b46c1);
+  }
+
+  .btn-green {
+    background: linear-gradient(to right, #48bb78, #38a169);
+    color: white;
+  }
+
+  .btn-green:hover {
+    background: linear-gradient(to right, #38a169, #2f855a);
+  }
+
+  .btn-blue {
+    background: linear-gradient(to right, #4299e1, #3182ce);
+    color: white;
+  }
+
+  .btn-blue:hover {
+    background: linear-gradient(to right, #3182ce, #2b6cb0);
+  }
+
+  .btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+  }
+
+  .textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    min-height: 100px;
+    margin-bottom: 1rem;
+  }
+
+  .select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+    background-color: white;
+  }
+
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+
+  .modal-content {
+    background-color: #2d3748;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .tab {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab.active {
+    border-bottom: 2px solid #4299e1;
+    font-weight: bold;
+  }
+
+  .tab-content {
+    display: none;
+    padding: 1rem 0;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .item {
+    padding: 1rem;
+    text-align: center;
+    font-weight: bold;
+    color: black;
+    margin-bottom: 1rem;
+  }
+
+  .rectangle {
+    background-color: #fbd38d;
+    border: 2px solid #dd6b20;
+  }
+
+  .circle {
+    background-color: #fbd38d;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1/1;
+  }
+
+  .rounded {
+    background-color: #fbd38d;
+    border-radius: 0.5rem;
+  }
+
+  .winner-card {
+    background-color: white;
+    color: black;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    max-width: 300px;
+    margin: 2rem auto;
+    text-align: center;
+    animation: bounce 1s infinite alternate;
+  }
+
+  @keyframes bounce {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes heartbeat {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+  }
+
+  .heartbeat {
+    animation: heartbeat 0.5s ease-in-out infinite;
+  }
+
+  .countdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    font-weight: bold;
+    z-index: 100;
+  }
+
+  .page {
+    display: none;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .page.active {
+    display: block;
+  }
+
+  .home-bg {
+    background: linear-gradient(135deg, #1a365d, #4c51bf, #1a365d);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .batch-bg {
+    background: linear-gradient(135deg, #0f3c57, #1e4e8c, #0f3c57);
+  }
+
+  .brgy-bg {
+    background: linear-gradient(135deg, #0f3c57, #1e4e8c, #0f3c57);
+  }
+
+  .katoda-bg {
+    background: linear-gradient(135deg, #0f3c57, #1e4e8c, #0f3c57);
+  }
+
+  .knights-bg {
+    background: linear-gradient(135deg, #1a202c, #2d3748, #1a202c);
+  }
+
+  .first-month-bg {
+    background: linear-gradient(135deg, #276749, #2f855a, #276749);
+  }
+
+  .custom-bg {
+    background: linear-gradient(135deg, #2b6cb0, #4299e1, #2b6cb0);
+  }
+
+  .bg-element {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.2;
+    mix-blend-mode: overlay;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .grid-cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .grid-cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .grid-cols-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .grid-cols-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+
+  .highlight {
+    animation: bounce 0.5s infinite alternate;
+    background-color: white !important;
+  }
+
+  .back-btn {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 10;
+    background: transparent;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+  }
+
+  .settings-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    background: transparent;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+  }
+
+  .loading-spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top: 4px solid white;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .winners-history {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 2rem;
+  }
+
+  .winners-history h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  .winners-list {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .winner-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .winner-item:last-child {
+    border-bottom: none;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #4a5568;
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .toast.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+  <div class="text-center">
+    <div class="loading-spinner"></div>
+    <p class="mt-4 text-xl">Loading data...</p>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast">
+  <div id="toast-message"></div>
+</div>
+
+<!-- Home Page -->
+<div id="home-page" class="page home-bg active">
+  <div class="bg-element" style="top: 10%; left: 10%; width: 200px; height: 200px; background-color: #4c51bf;"></div>
+  <div class="bg-element" style="bottom: 10%; right: 10%; width: 300px; height: 300px; background-color: #ed64a6;"></div>
+  <div class="bg-element" style="top: 40%; left: 30%; width: 150px; height: 150px; background-color: #4299e1;"></div>
+  
+  <div class="container mx-auto py-8">
+    <h1 class="text-4xl font-bold text-center mb-4">Random Picker App</h1>
+    <p class="text-xl text-center mb-8">Select a drawing option below to get started</p>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <!-- Batch Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Batch</h2>
+          <p class="text-center text-gray-600 mb-4">Draw names from batch list</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Batch-OVk3xbMW19NoLFkJxZ6O361fGyshja.png" alt="Batch icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('batch-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Brgy Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Barangay</h2>
+          <p class="text-center text-gray-600 mb-4">Draw names from barangay list</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Barangay-fWBI8Y18uCV4iUOJN5K1oICCUBv5Pf.png" alt="Barangay icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('barangay-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Katoda Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Catoda</h2>
+          <p class="text-center text-gray-600 mb-4">Draw numbers from 1-45</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Catoda-1sXu3r63Tiig8xuBjcG8Kkc0M2ZwIl.png" alt="Catoda icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('catoda-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Knights Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Knights</h2>
+          <p class="text-center text-gray-600 mb-4">Draw numbers from 1-25</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Knights-VO6JXQIZJgKqh6zvqRiPkhk8HHRnJN.png" alt="Knights icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('knights-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 1st of Month Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">1st of Month</h2>
+          <p class="text-center text-gray-600 mb-4">Draw numbers from 1-30</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://img.freepik.com/free-vector/calendar-icon-white-background_1308-84634.jpg?w=826&t=st=1712022400~exp=1712023000~hmac=c0c2b679b4a8f8c0d0b2c9c3d3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3" alt="1st of Month icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('first-month-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Custom Draw Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Custom Draw</h2>
+          <p class="text-center text-gray-600 mb-4">Create your own custom drawing</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://img.freepik.com/free-vector/settings-concept-illustration_114360-3754.jpg?w=826&t=st=1712022500~exp=1712023100~hmac=c0c2b679b4a8f8c0d0b2c9c3d3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3" alt="Custom Draw icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-secondary" onclick="showPage('custom-page')">Create Custom</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <footer class="mt-16 text-center text-white opacity-70">
+      <p>© <span id="current-year"></span> Random Picker App. All rights reserved.</p>
+    </footer>
+  </div>
+</div>
+
+<!-- Batch Page -->
+<div id="batch-page" class="page batch-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('batch-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <h1 id="batch-title" class="text-3xl font-bold mb-2 text-center">Batch 83 Geremyunhan</h1>
+    <h2 id="batch-subtitle" class="text-xl mb-8 text-center">Every 2nd Saturday Of the Month</h2>
+    
+    <!-- Names Grid -->
+    <div id="batch-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="batch-draw-btn" class="btn btn-primary text-2xl py-3 px-8" onclick="startDraw('batch')">Draw</button>
+      
+      <div id="batch-winner-display" style="display: none;" class="winner-card">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="batch-winner" class="text-2xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+
+    <!-- Winners History -->
+    <div class="winners-history">
+      <h3>Previous Winners</h3>
+      <div id="batch-winners-list" class="winners-list"></div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="batch-settings" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('batch-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="batch-title-input" type="text" class="input" value="Batch 83 Geremyunhan">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="batch-subtitle-input" type="text" class="input" value="Every 2nd Saturday Of the Month">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Enter Names:</label>
+          <textarea id="batch-names-input" class="textarea" placeholder="Enter one name per line"></textarea>
+          <button class="btn btn-primary w-full" onclick="addNames('batch')">Add Names</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Upload Names File:</label>
+          <input type="file" accept=".txt,.csv" onchange="handleFileUpload(this, 'batch')" class="input">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="batch-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="rounded">Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="batch-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Brgy Page -->
+<div id="barangay-page" class="page brgy-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('barangay-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <h1 id="barangay-title" class="text-3xl font-bold mb-2 text-center">BARANGAY JUDICIARY POBLACION</h1>
+    <h2 id="barangay-subtitle" class="text-xl mb-8 text-center">MONTHLY MEET-UP</h2>
+    
+    <!-- Names Grid -->
+    <div id="barangay-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="barangay-draw-btn" class="btn btn-primary text-2xl py-3 px-8" onclick="startDraw('barangay')">Draw</button>
+      
+      <div id="barangay-winner-display" style="display: none;" class="winner-card">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="barangay-winner" class="text-2xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+
+    <!-- Winners History -->
+    <div class="winners-history">
+      <h3>Previous Winners</h3>
+      <div id="barangay-winners-list" class="winners-list"></div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="barangay-settings" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('barangay-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="barangay-title-input" type="text" class="input" value="BARANGAY JUDICIARY POBLACION">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="barangay-subtitle-input" type="text" class="input" value="MONTHLY MEET-UP">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Enter Names:</label>
+          <textarea id="barangay-names-input" class="textarea" placeholder="Enter one name per line"></textarea>
+          <button class="btn btn-primary w-full" onclick="addNames('barangay')">Add Names</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Upload Names File:</label>
+          <input type="file" accept=".txt,.csv" onchange="handleFileUpload(this, 'barangay')" class="input">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="barangay-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="rounded">Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="barangay-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Katoda Page -->
+<div id="catoda-page" class="page katoda-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('catoda-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <h1 id="catoda-title" class="text-3xl font-bold mb-2 text-center">CATODA DRAW</h1>
+    <h2 id="catoda-subtitle" class="text-xl mb-8 text-center">NUMBERS 1-45</h2>
+    
+    <!-- Numbers Grid -->
+    <div id="catoda-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="catoda-draw-btn" class="btn btn-primary text-2xl py-3 px-8" onclick="startDraw('catoda')">Draw</button>
+      
+      <div id="catoda-winner-display" style="display: none;" class="winner-card">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="catoda-winner" class="text-5xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+
+    <!-- Winners History -->
+    <div class="winners-history">
+      <h3>Previous Winners</h3>
+      <div id="catoda-winners-list" class="winners-list"></div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="catoda-settings" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('catoda-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="catoda-title-input" type="text" class="input" value="CATODA DRAW">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="catoda-subtitle-input" type="text" class="input" value="NUMBERS 1-45">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Number Range:</label>
+          <div class="flex gap-4">
+            <div>
+              <label class="block text-sm">Min</label>
+              <input id="catoda-min" type="number" min="1" value="1" class="input">
+            </div>
+            <div>
+              <label class="block text-sm">Max</label>
+              <input id="catoda-max" type="number" min="2" value="45" class="input">
+            </div>
+          </div>
+          <button class="btn btn-primary w-full" onclick="generateNumbers('catoda')">Generate Numbers</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="catoda-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="rounded">Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="catoda-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Knights Page -->
+<div id="knights-page" class="page knights-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('knights-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <div class="flex items-center justify-center mb-4">
+      <div class="mr-3">🛡️</div>
+      <div>
+        <h1 id="knights-title" class="text-3xl font-bold mb-2 text-center">KNIGHTS DRAW</h1>
+        <h2 id="knights-subtitle" class="text-xl mb-8 text-center">NUMBERS 1-25</h2>
+      </div>
+      <div class="ml-3">🛡️</div>
+    </div>
+    
+    <!-- Numbers Grid -->
+    <div id="knights-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="knights-draw-btn" class="btn btn-blue text-2xl py-3 px-8" onclick="startDraw('knights')">Draw</button>
+      
+      <div id="knights-winner-display" style="display: none;" class="winner-card" style="border: 4px solid #2b6cb0; background: linear-gradient(to right, #fbd38d, #f6e05e);">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="knights-winner" class="text-5xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+
+    <!-- Winners History -->
+    <div class="winners-history">
+      <h3>Previous Winners</h3>
+      <div id="knights-winners-list" class="winners-list"></div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="knights-settings" class="modal" style="display: none;">
+    <div class="modal-content" style="background-color: #2b6cb0; border: 2px solid #f6e05e;">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('knights-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="knights-title-input" type="text" class="input" value="KNIGHTS DRAW">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="knights-subtitle-input" type="text" class="input" value="NUMBERS 1-25">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Number Range:</label>
+          <div class="flex gap-4">
+            <div>
+              <label class="block text-sm">Min</label>
+              <input id="knights-min" type="number" min="1" value="1" class="input">
+            </div>
+            <div>
+              <label class="block text-sm">Max</label>
+              <input id="knights-max" type="number" min="2" value="25" class="input">
+            </div>
+          </div>
+          <button class="btn btn-blue w-full" onclick="generateNumbers('knights')">Generate Numbers</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="knights-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle" selected>Circle</option>
+            <option value="rounded">Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="knights-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- First Month Page -->
+<div id="first-month-page" class="page first-month-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('first-month-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <div class="flex items-center justify-center mb-4">
+      <div class="mr-3">📅</div>
+      <div>
+        <h1 id="first-month-title" class="text-3xl font-bold mb-2 text-center">1ST OF THE MONTH</h1>
+        <h2 id="first-month-subtitle" class="text-xl mb-2 text-center">NUMBERS 1-30</h2>
+        <p id="current-month" class="text-lg text-center text-green-300"></p>
+      </div>
+      <div class="ml-3">📅</div>
+    </div>
+    
+    <!-- Numbers Grid -->
+    <div id="first-month-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="first-month-draw-btn" class="btn btn-green text-2xl py-3 px-8" onclick="startDraw('first-month')">Draw</button>
+      
+      <div id="first-month-winner-display" style="display: none;" class="winner-card" style="border: 2px solid #276749; background: linear-gradient(to right, #9ae6b4, #68d391);">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="first-month-winner" class="text-5xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+
+    <!-- Winners History -->
+    <div class="winners-history">
+      <h3>Previous Winners</h3>
+      <div id="first-month-winners-list" class="winners-list"></div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="first-month-settings" class="modal" style="display: none;">
+    <div class="modal-content" style="background-color: #276749; border: 2px solid #9ae6b4;">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('first-month-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="first-month-title-input" type="text" class="input" value="1ST OF THE MONTH">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="first-month-subtitle-input" type="text" class="input" value="NUMBERS 1-30">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Number Range:</label>
+          <div class="flex gap-4">
+            <div>
+              <label class="block text-sm">Min</label>
+              <input id="first-month-min" type="number" min="1" value="1" class="input">
+            </div>
+            <div>
+              <label class="block text-sm">Max</label>
+              <input id="first-month-max" type="number" min="2" value="30" class="input">
+            </div>
+          </div>
+          <button class="btn btn-green w-full" onclick="generateNumbers('first-month')">Generate Numbers</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="first-month-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="rounded" selected>Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="first-month-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Page -->
+<div id="custom-page" class="page custom-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('custom-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <div class="flex items-center justify-center mb-4">
+      <div class="mr-3">⚙️</div>
+      <div>
+        <h1 id="custom-title" class="text-3xl font-bold mb-2 text-center">CUSTOM DRAW</h1>
+        <h2 id="custom-subtitle" class="text-xl mb-8 text-center">YOUR CUSTOM DRAWING</h2>
+      </div>
+      <div class="ml-3">🎨</div>
+    </div>
+    
+    <!-- Items Grid -->
+    <div id="custom-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="custom-draw-btn" class="btn btn-secondary text-2xl py-3 px-8" onclick="startDraw('custom')">Draw</button>
+      
+      <div id="custom-winner-display" style="display: none;" class="winner-card">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="custom-winner" class="text-3xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+
+    <!-- Winners History -->
+    <div class="winners-history">
+      <h3>Previous Winners</h3>
+      <div id="custom-winners-list" class="winners-list"></div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="custom-settings" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Custom Draw Settings</h2>
+        <button onclick="toggleSettings('custom-settings')">✕</button>
+      </div>
+      
+      <div class="tabs">
+        <div class="flex border-b mb-4">
+          <div class="tab active" onclick="showTab('content-tab', this)">Content</div>
+          <div class="tab" onclick="showTab('appearance-tab', this)">Appearance</div>
+          <div class="tab" onclick="showTab('timing-tab', this)">Timing</div>
+        </div>
+        
+        <div id="content-tab" class="tab-content active">
+          <div class="space-y-4">
+            <div>
+              <label class="block mb-2">Edit Title:</label>
+              <input id="custom-title-input" type="text" class="input" value="CUSTOM DRAW">
+            </div>
+            
+            <div>
+              <label class="block mb-2">Edit Subtitle:</label>
+              <input id="custom-subtitle-input" type="text" class="input" value="YOUR CUSTOM DRAWING">
+            </div>
+            
+            <div>
+              <label class="block mb-2">Draw Type:</label>
+              <select id="custom-draw-type" class="select" onchange="toggleCustomDrawType()">
+                <option value="text">Text Items</option>
+                <option value="number">Number Range</option>
+              </select>
+            </div>
+            
+            <div id="custom-text-input-container">
+              <label class="block mb-2">Enter Items (one per line):</label>
+              <textarea id="custom-items-input" class="textarea" placeholder="Enter one item per line"></textarea>
+              <div class="flex gap-4 mt-2">
+                <button class="btn btn-primary flex-1" onclick="addCustomItems()">Add Items</button>
+                <div class="flex-1">
+                  <label class="block mb-2">Upload Items File:</label>
+                  <input type="file" accept=".txt,.csv" onchange="handleFileUpload(this, 'custom')" class="input">
+                </div>
+              </div>
+            </div>
+            
+            <div id="custom-number-input-container" style="display: none;">
+              <label class="block mb-2">Number Range:</label>
+              <div class="flex gap-4">
+                <div>
+                  <label class="block text-sm">Min</label>
+                  <input id="custom-min" type="number" min="1" value="1" class="input">
+                </div>
+                <div>
+                  <label class="block text-sm">Max</label>
+                  <input id="custom-max" type="number" min="2" value="100" class="input">
+                </div>
+              </div>
+              <button class="btn btn-primary w-full" onclick="generateCustomNumbers()">Generate Numbers</button>
+            </div>
+          </div>
+        </div>
+        
+        <div id="appearance-tab" class="tab-content">
+          <div class="space-y-4">
+            <div>
+              <label class="block mb-2">Select Shape:</label>
+              <select id="custom-shape" class="select">
+                <option value="rectangle">Rectangle</option>
+                <option value="circle">Circle</option>
+                <option value="rounded" selected>Rounded Rectangle</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block mb-2">Background Color:</label>
+              <select id="custom-bg-color" class="select" onchange="updateCustomBg()">
+                <option value="blue">Blue</option>
+                <option value="red">Red</option>
+                <option value="green">Green</option>
+                <option value="purple">Purple</option>
+                <option value="gray">Gray</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block mb-2">Item Color:</label>
+              <select id="custom-item-color" class="select">
+                <option value="yellow">Yellow</option>
+                <option value="blue">Blue</option>
+                <option value="green">Green</option>
+                <option value="red">Red</option>
+                <option value="purple">Purple</option>
+                <option value="gray">Gray</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div id="timing-tab" class="tab-content">
+          <div class="space-y-4">
+            <div>
+              <label class="block mb-2">Draw Time (seconds):</label>
+              <input id="custom-draw-time" type="range" min="5" max="60" value="45" class="w-full" oninput="updateDrawTimeValue('custom')">
+              <p id="custom-draw-time-value" class="text-center">45 seconds</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Countdown Display -->
+<div id="countdown-display" class="countdown" style="display: none;"></div>
+
+<script>
+  // Initialize Supabase client - REPLACE THESE VALUES with your actual Supabase URL and anon key
+  const supabaseUrl = 'https://sbedvubjuvavdqgfsexb.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiZWR2dWJqdXZhdmRxZ2ZzZXhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0ODk1MjYsImV4cCI6MjA1OTA2NTUyNn0.RpJF96qCBhWEHvqSnsu697cHZZczRmIZWE7eEI_SZxQ';
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Audio elements
+  let drumRoll = new Audio("https://free-sound-effects.net/mp3/03/free-sound-1674970809.mp3");
+  let winnerSound = new Audio("https://www.fesliyanstudios.com/play-mp3/6778");
+  let heartbeatSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2004/2004.wav");
+  
+  // Data storage
+  const data = {
+    batch: {
+      items: [],
+      title: "Batch 83 Geremyunhan",
+      subtitle: "Every 2nd Saturday Of the Month",
+      shape: "rectangle",
+      drawTime: 45,
+      isDrawing: false,
+      winner: "",
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      categoryId: 1
+    },
+    barangay: {
+      items: [],
+      title: "BARANGAY JUDICIARY POBLACION",
+      subtitle: "MONTHLY MEET-UP",
+      shape: "rectangle",
+      drawTime: 45,
+      isDrawing: false,
+      winner: "",
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      categoryId: 2
+    },
+    catoda: {
+      items: [],
+      title: "CATODA DRAW",
+      subtitle: "NUMBERS 1-45",
+      shape: "rectangle",
+      drawTime: 45,
+      isDrawing: false,
+      winner: null,
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      minNumber: 1,
+      maxNumber: 45,
+      categoryId: 3
+    },
+    knights: {
+      items: [],
+      title: "KNIGHTS DRAW",
+      subtitle: "NUMBERS 1-25",
+      shape: "circle",
+      drawTime: 45,
+      isDrawing: false,
+      winner: null,
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      minNumber: 1,
+      maxNumber: 25,
+      categoryId: 4
+    },
+    "first-month": {
+      items: [],
+      title: "1ST OF THE MONTH",
+      subtitle: "NUMBERS 1-30",
+      shape: "rounded",
+      drawTime: 45,
+      isDrawing: false,
+      winner: null,
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      minNumber: 1,
+      maxNumber: 30,
+      categoryId: 5
+    },
+    custom: {
+      items: [],
+      title: "CUSTOM DRAW",
+      subtitle: "YOUR CUSTOM DRAWING",
+      shape: "rounded",
+      drawTime: 45,
+      isDrawing: false,
+      winner: "",
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      drawType: "text",
+      minNumber: 1,
+      maxNumber: 100,
+      bgColor: "blue",
+      itemColor: "yellow",
+      categoryId: 6
+    }
+  };
+  
+  // Initialize the app
+  document.addEventListener("DOMContentLoaded", async function() {
+    try {
+      // Set current year in footer
+      document.getElementById("current-year").textContent = new Date().getFullYear();
+      
+      // Set current month in first-month page
+      document.getElementById("current-month").textContent = getMonthName();
+      
+      // Load data from Supabase
+      await loadAllData();
+      
+      // Initialize all pages
+      initializePage("batch");
+      initializePage("barangay");
+      initializePage("catoda");
+      initializePage("knights");
+      initializePage("first-month");
+      initializePage("custom");
+      
+      // Show home page by default
+      showPage("home-page");
+      
+      // Hide loading overlay
+      document.getElementById("loading-overlay").style.display = "none";
+    } catch (error) {
+      console.error("Error initializing app:", error);
+      showToast("Error loading data. Please refresh the page.");
+    }
+  });
+  
+  // Helper functions
+  function getMonthName() {
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return months[new Date().getMonth()];
+  }
+  
+  async function loadAllData() {
+    try {
+      // Load categories data
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*');
+      
+      if (categoriesError) throw categoriesError;
+      
+      // Update category data
+      categoriesData.forEach(category => {
+        const type = category.name;
+        if (data[type]) {
+          data[type].title = category.title;
+          data[type].subtitle = category.subtitle;
+          data[type].shape = category.shape;
+          data[type].drawTime = category.draw_time;
+          data[type].categoryId = category.id;
+          
+          if (category.min_number !== null) {
+            data[type].minNumber = category.min_number;
+          }
+          
+          if (category.max_number !== null) {
+            data[type].maxNumber = category.max_number;
+          }
+          
+          // Update UI
+          const titleElement = document.getElementById(`${type}-title`);
+          const subtitleElement = document.getElementById(`${type}-subtitle`);
+          const titleInput = document.getElementById(`${type}-title-input`);
+          const subtitleInput = document.getElementById(`${type}-subtitle-input`);
+          
+          if (titleElement) titleElement.textContent = category.title;
+          if (subtitleElement) subtitleElement.textContent = category.subtitle;
+          if (titleInput) titleInput.value = category.title;
+          if (subtitleInput) subtitleInput.value = category.subtitle;
+          
+          // Load shape
+          const shapeSelect = document.getElementById(`${type}-shape`);
+          if (shapeSelect) {
+            for (let i = 0; i < shapeSelect.options.length; i++) {
+              if (shapeSelect.options[i].value === category.shape) {
+                shapeSelect.selectedIndex = i;
+                break;
+              }
+            }
+          }
+          
+          // Load draw time
+          const drawTimeInput = document.getElementById(`${type}-draw-time`);
+          if (drawTimeInput) {
+            drawTimeInput.value = category.draw_time;
+          }
+          
+          // Load min/max numbers
+          if (type === 'catoda' || type === 'knights' || type === 'first-month') {
+            const minInput = document.getElementById(`${type}-min`);
+            const maxInput = document.getElementById(`${type}-max`);
+            
+            if (minInput && category.min_number !== null) {
+              minInput.value = category.min_number;
+            }
+            
+            if (maxInput && category.max_number !== null) {
+              maxInput.value = category.max_number;
+            }
+          }
+        }
+      });
+      
+      // Load items for each category
+      for (const type in data) {
+        if (data[type].categoryId) {
+          await loadItems(type);
+          await loadWinners(type);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+      showToast("Error loading data from database");
+    }
+  }
+  
+  async function loadItems(type) {
+    try {
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('items')
+        .select('*')
+        .eq('category_id', data[type].categoryId)
+        .eq('is_active', true)
+        .order('id');
+      
+      if (itemsError) throw itemsError;
+      
+      // Update items data
+      data[type].items = itemsData.map(item => ({
+        id: item.id,
+        value: item.value
+      }));
+      
+      // Update UI
+      renderItems(type);
+      
+      // Update textarea in settings
+      if (type === 'batch' || type === 'barangay') {
+        const namesInput = document.getElementById(`${type}-names-input`);
+        if (namesInput) {
+          namesInput.value = data[type].items.map(item => item.value).join('\n');
+        }
+      } else if (type === 'custom') {
+        const itemsInput = document.getElementById('custom-items-input');
+        if (itemsInput && data[type].items.length > 0) {
+          itemsInput.value = data[type].items.map(item => item.value).join('\n');
+        }
+      }
+    } catch (error) {
+      console.error(`Error loading ${type} items:`, error);
+      showToast(`Error loading ${type} items`);
+    }
+  }
+  
+  async function loadWinners(type) {
+    try {
+      const { data: winnersData, error: winnersError } = await supabase
+        .from('winners')
+        .select('*')
+        .eq('category_id', data[type].categoryId)
+        .order('drawn_at', { ascending: false });
+      
+      if (winnersError) throw winnersError;
+      
+      // Update winners list
+      const winnersList = document.getElementById(`${type}-winners-list`);
+      if (winnersList) {
+        winnersList.innerHTML = '';
+        
+        if (winnersData.length === 0) {
+          winnersList.innerHTML = '<div class="text-center p-4">No previous winners</div>';
+        } else {
+          winnersData.forEach(winner => {
+            const winnerItem = document.createElement('div');
+            winnerItem.className = 'winner-item';
+            
+            const date = new Date(winner.drawn_at);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+            
+            winnerItem.innerHTML = `
+              <div>${winner.value}</div>
+              <div class="text-sm opacity-70">${formattedDate}</div>
+            `;
+            
+            winnersList.appendChild(winnerItem);
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`Error loading ${type} winners:`, error);
+      showToast(`Error loading ${type} winners`);
+    }
+  }
+  
+  function showPage(pageId) {
+    // Hide all pages
+    const pages = document.querySelectorAll(".page");
+    pages.forEach(page => {
+      page.classList.remove("active");
+    });
+    
+    // Show selected page
+    document.getElementById(pageId).classList.add("active");
+  }
+  
+  function toggleSettings(settingsId) {
+    const settings = document.getElementById(settingsId);
+    if (settings.style.display === "none") {
+      settings.style.display = "flex";
+    } else {
+      settings.style.display = "none";
+    }
+  }
+  
+  function showTab(tabId, tabElement) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll(".tab-content");
+    tabContents.forEach(tab => {
+      tab.classList.remove("active");
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabId).classList.add("active");
+    
+    // Update tab styles
+    const tabs = document.querySelectorAll(".tab");
+    tabs.forEach(tab => {
+      tab.classList.remove("active");
+    });
+    
+    tabElement.classList.add("active");
+  }
+  
+  function initializePage(type) {
+    if (type === "batch" || type === "barangay") {
+      // Set up event listeners for settings
+      document.getElementById(`${type}-title-input`).addEventListener("change", function() {
+        updateCategorySettings(type, { title: this.value });
+      });
+      
+      document.getElementById(`${type}-subtitle-input`).addEventListener("change", function() {
+        updateCategorySettings(type, { subtitle: this.value });
+      });
+      
+      document.getElementById(`${type}-shape`).addEventListener("change", function() {
+        updateCategorySettings(type, { shape: this.value });
+      });
+      
+      document.getElementById(`${type}-draw-time`).addEventListener("change", function() {
+        updateCategorySettings(type, { drawTime: parseInt(this.value) || 45 });
+      });
+    } else if (type === "catoda" || type === "knights" || type === "first-month") {
+      // Set up event listeners for settings
+      document.getElementById(`${type}-title-input`).addEventListener("change", function() {
+        updateCategorySettings(type, { title: this.value });
+      });
+      
+      document.getElementById(`${type}-subtitle-input`).addEventListener("change", function() {
+        updateCategorySettings(type, { subtitle: this.value });
+      });
+      
+      document.getElementById(`${type}-shape`).addEventListener("change", function() {
+        updateCategorySettings(type, { shape: this.value });
+      });
+      
+      document.getElementById(`${type}-draw-time`).addEventListener("change", function() {
+        updateCategorySettings(type, { drawTime: parseInt(this.value) || 45 });
+      });
+      
+      document.getElementById(`${type}-min`).addEventListener("change", function() {
+        updateCategorySettings(type, { minNumber: parseInt(this.value) || 1 });
+      });
+      
+      document.getElementById(`${type}-max`).addEventListener("change", function() {
+        updateCategorySettings(type, { maxNumber: parseInt(this.value) || 45 });
+      });
+    } else if (type === "custom") {
+      // Set up event listeners for settings
+      document.getElementById(`${type}-title-input`).addEventListener("change", function() {
+        updateCategorySettings(type, { title: this.value });
+      });
+      
+      document.getElementById(`${type}-subtitle-input`).addEventListener("change", function() {
+        updateCategorySettings(type, { subtitle: this.value });
+      });
+      
+      document.getElementById(`${type}-shape`).addEventListener("change", function() {
+        updateCategorySettings(type, { shape: this.value });
+      });
+      
+      document.getElementById(`${type}-draw-time`).addEventListener("change", function() {
+        updateCategorySettings(type, { drawTime: parseInt(this.value) || 45 });
+        document.getElementById(`${type}-draw-time-value`).textContent = `${this.value} seconds`;
+      });
+    }
+  }
+  
+  async function updateCategorySettings(type, settings) {
+    try {
+      // Update local data
+      if (settings.title) {
+        data[type].title = settings.title;
+        document.getElementById(`${type}-title`).textContent = settings.title;
+      }
+      
+      if (settings.subtitle) {
+        data[type].subtitle = settings.subtitle;
+        document.getElementById(`${type}-subtitle`).textContent = settings.subtitle;
+      }
+      
+      if (settings.shape) {
+        data[type].shape = settings.shape;
+        renderItems(type);
+      }
+      
+      if (settings.drawTime) {
+        data[type].drawTime = settings.drawTime;
+      }
+      
+      if (settings.minNumber !== undefined) {
+        data[type].minNumber = settings.minNumber;
+      }
+      
+      if (settings.maxNumber !== undefined) {
+        data[type].maxNumber = settings.maxNumber;
+      }
+      
+      // Update database
+      const updateData = {};
+      if (settings.title) updateData.title = settings.title;
+      if (settings.subtitle) updateData.subtitle = settings.subtitle;
+      if (settings.shape) updateData.shape = settings.shape;
+      if (settings.drawTime) updateData.draw_time = settings.drawTime;
+      if (settings.minNumber !== undefined) updateData.min_number = settings.minNumber;
+      if (settings.maxNumber !== undefined) updateData.max_number = settings.maxNumber;
+      
+      const { error } = await supabase
+        .from('categories')
+        .update(updateData)
+        .eq('id', data[type].categoryId);
+      
+      if (error) throw error;
+      
+      showToast("Settings updated successfully");
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      showToast("Error updating settings");
+    }
+  }
+  
+  async function addNames(type) {
+    try {
+      const input = document.getElementById(`${type}-names-input`).value;
+      if (!input.trim()) return;
+      
+      const namesList = input.split("\n").map(name => name.trim()).filter(name => name !== "");
+      
+      // Clear existing items
+      const { error: deleteError } = await supabase
+        .from('items')
+        .update({ is_active: false })
+        .eq('category_id', data[type].categoryId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Add new items
+      const newItems = namesList.map(name => ({
+        category_id: data[type].categoryId,
+        value: name,
+        is_active: true
+      }));
+      
+      const { data: insertedItems, error: insertError } = await supabase
+        .from('items')
+        .insert(newItems)
+        .select();
+      
+      if (insertError) throw insertError;
+      
+      // Update local data
+      data[type].items = insertedItems.map(item => ({
+        id: item.id,
+        value: item.value
+      }));
+      
+      renderItems(type);
+      showToast("Names added successfully");
+    } catch (error) {
+      console.error("Error adding names:", error);
+      showToast("Error adding names");
+    }
+  }
+  
+  function handleFileUpload(fileInput, type) {
+    const file = fileInput.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const text = event.target.result;
+      if (text) {
+        const itemsList = text.split("\n").map(item => item.trim()).filter(item => item !== "");
+        
+        if (type === "batch" || type === "barangay") {
+          document.getElementById(`${type}-names-input`).value = itemsList.join("\n");
+        } else if (type === "custom") {
+          document.getElementById(`custom-items-input`).value = itemsList.join("\n");
+        }
+      }
+    };
+    reader.readAsText(file);
+  }
+  
+  async function generateNumbers(type) {
+    try {
+      const min = parseInt(document.getElementById(`${type}-min`).value) || 1;
+      const max = parseInt(document.getElementById(`${type}-max`).value) || 45;
+      
+      // Update category settings
+      await updateCategorySettings(type, {
+        minNumber: min,
+        maxNumber: max
+      });
+      
+      // Clear existing items
+      const { error: deleteError } = await supabase
+        .from('items')
+        .update({ is_active: false })
+        .eq('category_id', data[type].categoryId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Add new items
+      const newItems = [];
+      for (let i = min; i <= max; i++) {
+        newItems.push({
+          category_id: data[type].categoryId,
+          value: i.toString(),
+          is_active: true
+        });
+      }
+      
+      const { data: insertedItems, error: insertError } = await supabase
+        .from('items')
+        .insert(newItems)
+        .select();
+      
+      if (insertError) throw insertError;
+      
+      // Update local data
+      data[type].items = insertedItems.map(item => ({
+        id: item.id,
+        value: item.value
+      }));
+      
+      renderItems(type);
+      showToast("Numbers generated successfully");
+    } catch (error) {
+      console.error("Error generating numbers:", error);
+      showToast("Error generating numbers");
+    }
+  }
+  
+  function toggleCustomDrawType() {
+    const drawType = document.getElementById("custom-draw-type").value;
+    data.custom.drawType = drawType;
+    
+    if (drawType === "text") {
+      document.getElementById("custom-text-input-container").style.display = "block";
+      document.getElementById("custom-number-input-container").style.display = "none";
+    } else {
+      document.getElementById("custom-text-input-container").style.display = "none";
+      document.getElementById("custom-number-input-container").style.display = "block";
+    }
+  }
+  
+  async function addCustomItems() {
+    try {
+      const input = document.getElementById("custom-items-input").value;
+      if (!input.trim()) return;
+      
+      const itemsList = input.split("\n").map(item => item.trim()).filter(item => item !== "");
+      
+      // Clear existing items
+      const { error: deleteError } = await supabase
+        .from('items')
+        .update({ is_active: false })
+        .eq('category_id', data.custom.categoryId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Add new items
+      const newItems = itemsList.map(item => ({
+        category_id: data.custom.categoryId,
+        value: item,
+        is_active: true
+      }));
+      
+      const { data: insertedItems, error: insertError } = await supabase
+        .from('items')
+        .insert(newItems)
+        .select();
+      
+      if (insertError) throw insertError;
+      
+      // Update local data
+      data.custom.items = insertedItems.map(item => ({
+        id: item.id,
+        value: item.value
+      }));
+      
+      renderItems("custom");
+      showToast("Items added successfully");
+    } catch (error) {
+      console.error("Error adding custom items:", error);
+      showToast("Error adding custom items");
+    }
+  }
+  
+  async function generateCustomNumbers() {
+    try {
+      const min = parseInt(document.getElementById("custom-min").value) || 1;
+      const max = parseInt(document.getElementById("custom-max").value) || 100;
+      
+      // Update category settings
+      await updateCategorySettings("custom", {
+        minNumber: min,
+        maxNumber: max
+      });
+      
+      // Clear existing items
+      const { error: deleteError } = await supabase
+        .from('items')
+        .update({ is_active: false })
+        .eq('category_id', data.custom.categoryId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Add new items
+      const newItems = [];
+      for (let i = min; i <= max; i++) {
+        newItems.push({
+          category_id: data.custom.categoryId,
+          value: i.toString(),
+          is_active: true
+        });
+      }
+      
+      const { data: insertedItems, error: insertError } = await supabase
+        .from('items')
+        .insert(newItems)
+        .select();
+      
+      if (insertError) throw insertError;
+      
+      // Update local data
+      data.custom.items = insertedItems.map(item => ({
+        id: item.id,
+        value: item.value
+      }));
+      
+      renderItems("custom");
+      showToast("Numbers generated successfully");
+    } catch (error) {
+      console.error("Error generating custom numbers:", error);
+      showToast("Error generating custom numbers");
+    }
+  }
+  
+  function updateCustomBg() {
+    const bgColor = document.getElementById("custom-bg-color").value;
+    data.custom.bgColor = bgColor;
+    
+    const customPage = document.getElementById("custom-page");
+    customPage.className = "page custom-bg";
+    
+    switch (bgColor) {
+      case "blue":
+        customPage.classList.add("bg-gradient-blue");
+        break;
+      case "red":
+        customPage.classList.add("bg-gradient-red");
+        break;
+      case "green":
+        customPage.classList.add("bg-gradient-green");
+        break;
+      case "purple":
+        customPage.classList.add("bg-gradient-purple");
+        break;
+      case "gray":
+        customPage.classList.add("bg-gradient-gray");
+        break;
+    }
+  }
+  
+  function updateDrawTimeValue(type) {
+    const value = document.getElementById(`${type}-draw-time`).value;
+    document.getElementById(`${type}-draw-time-value`).textContent = `${value} seconds`;
+    data[type].drawTime = parseInt(value);
+  }
+  
+  function renderItems(type) {
+    const grid = document.getElementById(`${type}-grid`);
+    if (!grid) return;
+    
+    grid.innerHTML = "";
+    
+    const items = data[type].items;
+    
+    if (items.length === 0) {
+      grid.innerHTML = '<div class="col-span-full text-center p-4 bg-white bg-opacity-10 rounded">No items available. Add items in settings.</div>';
+      return;
+    }
+    
+    items.forEach((item, index) => {
+      const itemElement = document.createElement("div");
+      
+      // Apply shape styles
+      let shapeClass = "";
+      if (data[type].shape === "rectangle") {
+        shapeClass = "rectangle";
+      } else if (data[type].shape === "circle") {
+        shapeClass = "circle";
+      } else {
+        shapeClass = "rounded";
+      }
+      
+      // Apply custom styles for custom page
+      if (type === "custom") {
+        const itemColor = document.getElementById("custom-item-color").value;
+        itemElement.style.backgroundColor = getItemBgColor(itemColor);
+        if (data.custom.shape === "rectangle") {
+          itemElement.style.border = `2px solid ${getItemBorderColor(itemColor)}`;
+        }
+      }
+      
+      itemElement.className = `item ${shapeClass}`;
+      itemElement.textContent = item.value;
+      itemElement.dataset.index = index;
+      itemElement.dataset.id = item.id;
+      
+      if (data[type].highlightIndex === index) {
+        itemElement.classList.add("highlight");
+      }
+      
+      grid.appendChild(itemElement);
+    });
+  }
+  
+  function getItemBgColor(color) {
+    switch (color) {
+      case "yellow": return "#fbd38d";
+      case "blue": return "#90cdf4";
+      case "green": return "#9ae6b4";
+      case "red": return "#feb2b2";
+      case "purple": return "#d6bcfa";
+      case "gray": return "#cbd5e0";
+      default: return "#fbd38d";
+    }
+  }
+  
+  function getItemBorderColor(color) {
+    switch (color) {
+      case "yellow": return "#dd6b20";
+      case "blue": return "#2b6cb0";
+      case "green": return "#276749";
+      case "red": return "#9b2c2c";
+      case "purple": return "#553c9a";
+      case "gray": return "#4a5568";
+      default: return "#dd6b20";
+    }
+  }
+  
+  function startDraw(type) {
+    const items = data[type].items;
+    
+    if (items.length === 0) {
+      showToast("No items to draw");
+      return;
+    }
+    
+    data[type].isDrawing = true;
+    toggleSettings(`${type}-settings`);
+    data[type].winner = "";
+    
+    // Disable draw button
+    document.getElementById(`${type}-draw-btn`).disabled = true;
+    document.getElementById(`${type}-draw-btn`).classList.add("btn-disabled");
+    
+    // Start countdown
+    let count = 3;
+    const countdownDisplay = document.getElementById("countdown-display");
+    countdownDisplay.style.display = "block";
+    countdownDisplay.textContent = count;
+    
+    const countdownInterval = setInterval(() => {
+      count--;
+      countdownDisplay.textContent = count;
+      
+      if (count <= 0) {
+        clearInterval(countdownInterval);
+        countdownDisplay.style.display = "none";
+        startHighlighting(type);
+      }
+    }, 1000);
+  }
+  
+  function startHighlighting(type) {
+    heartbeatSound.loop = true;
+    heartbeatSound.play();
+    
+    const items = data[type].items;
+    
+    let remainingTime = data[type].drawTime;
+    const countdownDisplay = document.getElementById("countdown-display");
+    countdownDisplay.style.display = "block";
+    countdownDisplay.textContent = remainingTime;
+    
+    // Start highlighting items randomly
+    data[type].highlightInterval = setInterval(() => {
+      const randomIndex = Math.floor(Math.random() * items.length);
+      data[type].highlightIndex = randomIndex;
+      renderItems(type);
+    }, 150);
+    
+    // Start countdown timer
+    data[type].timerInterval = setInterval(() => {
+      remainingTime--;
+      countdownDisplay.textContent = remainingTime;
+      
+      // Increase heartbeat intensity as countdown approaches zero
+      if (remainingTime <= 10) {
+        heartbeatSound.playbackRate = 1 + (10 - remainingTime) / 10;
+      }
+      
+      if (remainingTime <= 0) {
+        clearInterval(data[type].highlightInterval);
+        clearInterval(data[type].timerInterval);
+        countdownDisplay.style.display = "none";
+        selectWinner(type);
+      }
+    }, 1000);
+  }
+  
+  async function selectWinner(type) {
+    try {
+      heartbeatSound.pause();
+      heartbeatSound.currentTime = 0;
+      
+      winnerSound.play();
+      
+      const items = data[type].items;
+      
+      const winnerIndex = Math.floor(Math.random() * items.length);
+      const winnerItem = items[winnerIndex];
+      
+      // Update UI
+      document.getElementById(`${type}-winner`).textContent = winnerItem.value;
+      document.getElementById(`${type}-winner-display`).style.display = "block";
+      
+      // Save winner to database
+      const { error: winnerError } = await supabase
+        .from('winners')
+        .insert({
+          category_id: data[type].categoryId,
+          item_id: winnerItem.id,
+          value: winnerItem.value
+        });
+      
+      if (winnerError) throw winnerError;
+      
+      // Mark item as inactive
+      const { error: updateError } = await supabase
+        .from('items')
+        .update({ is_active: false })
+        .eq('id', winnerItem.id);
+      
+      if (updateError) throw updateError;
+      
+      // Remove winner from local data
+      data[type].items = data[type].items.filter(item => item.id !== winnerItem.id);
+      
+      // Reset highlight
+      data[type].highlightIndex = null;
+      data[type].isDrawing = false;
+      
+      // Enable draw button
+      document.getElementById(`${type}-draw-btn`).disabled = false;
+      document.getElementById(`${type}-draw-btn`).classList.remove("btn-disabled");
+      
+      // Trigger confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      
+      // Update UI
+      renderItems(type);
+      
+      // Reload winners
+      await loadWinners(type);
+    } catch (error) {
+      console.error("Error selecting winner:", error);
+      showToast("Error selecting winner");
+    }
+  }
+  
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    const toastMessage = document.getElementById("toast-message");
+    
+    toastMessage.textContent = message;
+    toast.classList.add("show");
+    
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
+  }
+</script>
+</body>
+</html>
+
