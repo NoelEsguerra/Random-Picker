@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Picker App</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<style>
+  /* Custom styles */
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0f3c57;
+    color: white;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+
+  .bg-gradient-blue {
+    background: linear-gradient(135deg, #1a365d, #2a4365, #1a365d);
+  }
+
+  .bg-gradient-green {
+    background: linear-gradient(135deg, #276749, #2f855a, #276749);
+  }
+
+  .bg-gradient-red {
+    background: linear-gradient(135deg, #9b2c2c, #c53030, #9b2c2c);
+  }
+
+  .bg-gradient-purple {
+    background: linear-gradient(135deg, #553c9a, #6b46c1, #553c9a);
+  }
+
+  .bg-gradient-gray {
+    background: linear-gradient(135deg, #2d3748, #4a5568, #2d3748);
+  }
+
+  .card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background: linear-gradient(to right, #ed8936, #dd6b20);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(to right, #dd6b20, #c05621);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(to right, #667eea, #764ba2);
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background: linear-gradient(to right, #5a67d8, #6b46c1);
+  }
+
+  .btn-green {
+    background: linear-gradient(to right, #48bb78, #38a169);
+    color: white;
+  }
+
+  .btn-green:hover {
+    background: linear-gradient(to right, #38a169, #2f855a);
+  }
+
+  .btn-blue {
+    background: linear-gradient(to right, #4299e1, #3182ce);
+    color: white;
+  }
+
+  .btn-blue:hover {
+    background: linear-gradient(to right, #3182ce, #2b6cb0);
+  }
+
+  .btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+  }
+
+  .textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    min-height: 100px;
+    margin-bottom: 1rem;
+  }
+
+  .select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+    background-color: white;
+  }
+
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+
+  .modal-content {
+    background-color: #2d3748;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .tab {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab.active {
+    border-bottom: 2px solid #4299e1;
+    font-weight: bold;
+  }
+
+  .tab-content {
+    display: none;
+    padding: 1rem 0;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .item {
+    padding: 1rem;
+    text-align: center;
+    font-weight: bold;
+    color: black;
+    margin-bottom: 1rem;
+  }
+
+  .rectangle {
+    background-color: #fbd38d;
+    border: 2px solid #dd6b20;
+  }
+
+  .circle {
+    background-color: #fbd38d;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1/1;
+  }
+
+  .rounded {
+    background-color: #fbd38d;
+    border-radius: 0.5rem;
+  }
+
+  .winner-card {
+    background-color: white;
+    color: black;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    max-width: 300px;
+    margin: 2rem auto;
+    text-align: center;
+    animation: bounce 1s infinite alternate;
+  }
+
+  @keyframes bounce {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes heartbeat {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+  }
+
+  .heartbeat {
+    animation: heartbeat 0.5s ease-in-out infinite;
+  }
+
+  .countdown {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    font-weight: bold;
+    z-index: 100;
+  }
+
+  .page {
+    display: none;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .page.active {
+    display: block;
+  }
+
+  .home-bg {
+    background: linear-gradient(135deg, #1a365d, #4c51bf, #1a365d);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .batch-bg {
+    background: linear-gradient(135deg, #0f3c57, #1e4e8c, #0f3c57);
+  }
+
+  .brgy-bg {
+    background: linear-gradient(135deg, #0f3c57, #1e4e8c, #0f3c57);
+  }
+
+  .katoda-bg {
+    background: linear-gradient(135deg, #0f3c57, #1e4e8c, #0f3c57);
+  }
+
+  .knights-bg {
+    background: linear-gradient(135deg, #1a202c, #2d3748, #1a202c);
+  }
+
+  .first-month-bg {
+    background: linear-gradient(135deg, #276749, #2f855a, #276749);
+  }
+
+  .custom-bg {
+    background: linear-gradient(135deg, #2b6cb0, #4299e1, #2b6cb0);
+  }
+
+  .bg-element {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.2;
+    mix-blend-mode: overlay;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .grid-cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .grid-cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .grid-cols-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .grid-cols-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+
+  .highlight {
+    animation: bounce 0.5s infinite alternate;
+    background-color: white !important;
+  }
+
+  .back-btn {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 10;
+    background: transparent;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+  }
+
+  .settings-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    background: transparent;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+<!-- Home Page -->
+<div id="home-page" class="page home-bg active">
+  <div class="bg-element" style="top: 10%; left: 10%; width: 200px; height: 200px; background-color: #4c51bf;"></div>
+  <div class="bg-element" style="bottom: 10%; right: 10%; width: 300px; height: 300px; background-color: #ed64a6;"></div>
+  <div class="bg-element" style="top: 40%; left: 30%; width: 150px; height: 150px; background-color: #4299e1;"></div>
+  
+  <div class="container mx-auto py-8">
+    <h1 class="text-4xl font-bold text-center mb-4">Random Picker</h1>
+    <p class="text-xl text-center mb-8">Select a drawing option below to get started</p>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <!-- Batch Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Batch</h2>
+          <p class="text-center text-gray-600 mb-4">Draw names from batch list</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Batch-OVk3xbMW19NoLFkJxZ6O361fGyshja.png" alt="Batch icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('batch-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Brgy Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Barangay</h2>
+          <p class="text-center text-gray-600 mb-4">Draw names from barangay list</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Barangay-fWBI8Y18uCV4iUOJN5K1oICCUBv5Pf.png" alt="Barangay icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('brgy-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Katoda Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Catoda</h2>
+          <p class="text-center text-gray-600 mb-4">Draw numbers from 1-45</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Catoda-1sXu3r63Tiig8xuBjcG8Kkc0M2ZwIl.png" alt="Catoda icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('katoda-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Knights Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Knights</h2>
+          <p class="text-center text-gray-600 mb-4">Draw numbers from 1-25</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Knights-VO6JXQIZJgKqh6zvqRiPkhk8HHRnJN.png" alt="Knights icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('knights-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 1st of Month Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">1st of Month</h2>
+          <p class="text-center text-gray-600 mb-4">Draw numbers from 1-30</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://img.freepik.com/free-vector/calendar-icon-white-background_1308-84634.jpg?w=826&t=st=1712022400~exp=1712023000~hmac=c0c2b679b4a8f8c0d0b2c9c3d3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3" alt="1st of Month icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-primary" onclick="showPage('first-month-page')">Select</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Custom Draw Card -->
+      <div class="card">
+        <div class="p-4">
+          <h2 class="text-xl font-bold text-center text-gray-800">Custom Draw</h2>
+          <p class="text-center text-gray-600 mb-4">Create your own custom drawing</p>
+          <div class="flex justify-center mb-4">
+            <img src="https://img.freepik.com/free-vector/settings-concept-illustration_114360-3754.jpg?w=826&t=st=1712022500~exp=1712023100~hmac=c0c2b679b4a8f8c0d0b2c9c3d3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3" alt="Custom Draw icon" class="h-36 w-36 object-contain rounded-lg">
+          </div>
+          <div class="flex justify-center">
+            <button class="btn btn-secondary" onclick="showPage('custom-page')">Create Custom</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <footer class="mt-16 text-center text-white opacity-70">
+      <p>© <span id="current-year"></span> Random Picker App. All rights reserved.</p>
+    </footer>
+  </div>
+</div>
+
+<!-- Batch Page -->
+<div id="batch-page" class="page batch-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('batch-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <h1 id="batch-title" class="text-3xl font-bold mb-2 text-center">Batch 83 Geremyunhan</h1>
+    <h2 id="batch-subtitle" class="text-xl mb-8 text-center">Every 2nd Saturday Of the Month</h2>
+    
+    <!-- Names Grid -->
+    <div id="batch-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="batch-draw-btn" class="btn btn-primary text-2xl py-3 px-8" onclick="startDraw('batch')">Draw</button>
+      
+      <div id="batch-winner-display" style="display: none;" class="winner-card">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="batch-winner" class="text-2xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="batch-settings" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('batch-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="batch-title-input" type="text" class="input" value="Batch 83 Geremyunhan">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="batch-subtitle-input" type="text" class="input" value="Every 2nd Saturday Of the Month">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Enter Names:</label>
+          <textarea id="batch-names-input" class="textarea" placeholder="Enter one name per line">Willy
+Lito
+George
+Jess
+Monner
+Jenny
+Meanne
+Ronnie
+Noel
+Imie
+Irene
+Lilian
+Nory
+Emelie
+Marina
+Myleen
+Merlinda</textarea>
+          <button class="btn btn-primary w-full" onclick="addNames('batch')">Add Names</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Upload Names File:</label>
+          <input type="file" accept=".txt,.csv" onchange="handleFileUpload(this, 'batch')" class="input">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="batch-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="rounded">Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="batch-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Brgy Page -->
+<div id="brgy-page" class="page brgy-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('brgy-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <h1 id="brgy-title" class="text-3xl font-bold mb-2 text-center">BARANGAY JUDICIARY POBLACION</h1>
+    <h2 id="brgy-subtitle" class="text-xl mb-8 text-center">MONTHLY MEET-UP</h2>
+    
+    <!-- Names Grid -->
+    <div id="brgy-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="brgy-draw-btn" class="btn btn-primary text-2xl py-3 px-8" onclick="startDraw('brgy')">Draw</button>
+      
+      <div id="brgy-winner-display" style="display: none;" class="winner-card">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="brgy-winner" class="text-2xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="brgy-settings" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('brgy-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="brgy-title-input" type="text" class="input" value="BARANGAY JUDICIARY POBLACION">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="brgy-subtitle-input" type="text" class="input" value="MONTHLY MEET-UP">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Enter Names:</label>
+          <textarea id="brgy-names-input" class="textarea" placeholder="Enter one name per line">ALBERTO
+NHOEL
+NESTOR
+ALDRIN
+K. ADING
+K. REY
+K. JL
+RUBEN
+KAP B.
+MAXIMA
+VICKY</textarea>
+          <button class="btn btn-primary w-full" onclick="addNames('brgy')">Add Names</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Upload Names File:</label>
+          <input type="file" accept=".txt,.csv" onchange="handleFileUpload(this, 'brgy')" class="input">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="brgy-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="rounded">Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="brgy-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Katoda Page -->
+<div id="katoda-page" class="page katoda-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('katoda-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <h1 id="katoda-title" class="text-3xl font-bold mb-2 text-center">CATODA DRAW</h1>
+    <h2 id="katoda-subtitle" class="text-xl mb-8 text-center">NUMBERS 1-45</h2>
+    
+    <!-- Numbers Grid -->
+    <div id="katoda-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="katoda-draw-btn" class="btn btn-primary text-2xl py-3 px-8" onclick="startDraw('katoda')">Draw</button>
+      
+      <div id="katoda-winner-display" style="display: none;" class="winner-card">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="katoda-winner" class="text-5xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="katoda-settings" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('katoda-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="katoda-title-input" type="text" class="input" value="CATODA DRAW">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="katoda-subtitle-input" type="text" class="input" value="NUMBERS 1-45">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Number Range:</label>
+          <div class="flex gap-4">
+            <div>
+              <label class="block text-sm">Min</label>
+              <input id="katoda-min" type="number" min="1" value="1" class="input">
+            </div>
+            <div>
+              <label class="block text-sm">Max</label>
+              <input id="katoda-max" type="number" min="2" value="45" class="input">
+            </div>
+          </div>
+          <button class="btn btn-primary w-full" onclick="generateNumbers('katoda')">Generate Numbers</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="katoda-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="rounded">Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="katoda-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Knights Page -->
+<div id="knights-page" class="page knights-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('knights-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <div class="flex items-center justify-center mb-4">
+      <div class="mr-3">🛡️</div>
+      <div>
+        <h1 id="knights-title" class="text-3xl font-bold mb-2 text-center">KNIGHTS DRAW</h1>
+        <h2 id="knights-subtitle" class="text-xl mb-8 text-center">NUMBERS 1-25</h2>
+      </div>
+      <div class="ml-3">🛡️</div>
+    </div>
+    
+    <!-- Numbers Grid -->
+    <div id="knights-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="knights-draw-btn" class="btn btn-blue text-2xl py-3 px-8" onclick="startDraw('knights')">Draw</button>
+      
+      <div id="knights-winner-display" style="display: none;" class="winner-card" style="border: 4px solid #2b6cb0; background: linear-gradient(to right, #fbd38d, #f6e05e);">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="knights-winner" class="text-5xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="knights-settings" class="modal" style="display: none;">
+    <div class="modal-content" style="background-color: #2b6cb0; border: 2px solid #f6e05e;">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('knights-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="knights-title-input" type="text" class="input" value="KNIGHTS DRAW">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="knights-subtitle-input" type="text" class="input" value="NUMBERS 1-25">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Number Range:</label>
+          <div class="flex gap-4">
+            <div>
+              <label class="block text-sm">Min</label>
+              <input id="knights-min" type="number" min="1" value="1" class="input">
+            </div>
+            <div>
+              <label class="block text-sm">Max</label>
+              <input id="knights-max" type="number" min="2" value="25" class="input">
+            </div>
+          </div>
+          <button class="btn btn-blue w-full" onclick="generateNumbers('knights')">Generate Numbers</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="knights-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle" selected>Circle</option>
+            <option value="rounded">Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="knights-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- First Month Page -->
+<div id="first-month-page" class="page first-month-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('first-month-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <div class="flex items-center justify-center mb-4">
+      <div class="mr-3">📅</div>
+      <div>
+        <h1 id="first-month-title" class="text-3xl font-bold mb-2 text-center">1ST OF THE MONTH</h1>
+        <h2 id="first-month-subtitle" class="text-xl mb-2 text-center">NUMBERS 1-30</h2>
+        <p id="current-month" class="text-lg text-center text-green-300"></p>
+      </div>
+      <div class="ml-3">📅</div>
+    </div>
+    
+    <!-- Numbers Grid -->
+    <div id="first-month-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="first-month-draw-btn" class="btn btn-green text-2xl py-3 px-8" onclick="startDraw('first-month')">Draw</button>
+      
+      <div id="first-month-winner-display" style="display: none;" class="winner-card" style="border: 2px solid #276749; background: linear-gradient(to right, #9ae6b4, #68d391);">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="first-month-winner" class="text-5xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="first-month-settings" class="modal" style="display: none;">
+    <div class="modal-content" style="background-color: #276749; border: 2px solid #9ae6b4;">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Settings</h2>
+        <button onclick="toggleSettings('first-month-settings')">✕</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Edit Title:</label>
+          <input id="first-month-title-input" type="text" class="input" value="1ST OF THE MONTH">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Edit Subtitle:</label>
+          <input id="first-month-subtitle-input" type="text" class="input" value="NUMBERS 1-30">
+        </div>
+        
+        <div>
+          <label class="block mb-2">Number Range:</label>
+          <div class="flex gap-4">
+            <div>
+              <label class="block text-sm">Min</label>
+              <input id="first-month-min" type="number" min="1" value="1" class="input">
+            </div>
+            <div>
+              <label class="block text-sm">Max</label>
+              <input id="first-month-max" type="number" min="2" value="30" class="input">
+            </div>
+          </div>
+          <button class="btn btn-green w-full" onclick="generateNumbers('first-month')">Generate Numbers</button>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Select Shape:</label>
+          <select id="first-month-shape" class="select">
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+            <option value="rounded" selected>Rounded Rectangle</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block mb-2">Draw Time (seconds):</label>
+          <input id="first-month-draw-time" type="number" min="5" max="60" value="45" class="input">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Page -->
+<div id="custom-page" class="page custom-bg">
+  <button class="back-btn" onclick="showPage('home-page')">
+    ← Back
+  </button>
+  <button class="settings-btn" onclick="toggleSettings('custom-settings')">
+    ⚙️ Settings
+  </button>
+  
+  <div class="container mx-auto pt-16">
+    <div class="flex items-center justify-center mb-4">
+      <div class="mr-3">⚙️</div>
+      <div>
+        <h1 id="custom-title" class="text-3xl font-bold mb-2 text-center">CUSTOM DRAW</h1>
+        <h2 id="custom-subtitle" class="text-xl mb-8 text-center">YOUR CUSTOM DRAWING</h2>
+      </div>
+      <div class="ml-3">🎨</div>
+    </div>
+    
+    <!-- Items Grid -->
+    <div id="custom-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8"></div>
+    
+    <!-- Draw Button and Winner Display -->
+    <div class="flex flex-col items-center justify-center mt-8">
+      <button id="custom-draw-btn" class="btn btn-secondary text-2xl py-3 px-8" onclick="startDraw('custom')">Draw</button>
+      
+      <div id="custom-winner-display" style="display: none;" class="winner-card">
+        <h3 class="text-xl font-bold text-center">Winner</h3>
+        <p id="custom-winner" class="text-3xl font-bold text-center mt-2"></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="custom-settings" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Custom Draw Settings</h2>
+        <button onclick="toggleSettings('custom-settings')">✕</button>
+      </div>
+      
+      <div class="tabs">
+        <div class="flex border-b mb-4">
+          <div class="tab active" onclick="showTab('content-tab', this)">Content</div>
+          <div class="tab" onclick="showTab('appearance-tab', this)">Appearance</div>
+          <div class="tab" onclick="showTab('timing-tab', this)">Timing</div>
+        </div>
+        
+        <div id="content-tab" class="tab-content active">
+          <div class="space-y-4">
+            <div>
+              <label class="block mb-2">Edit Title:</label>
+              <input id="custom-title-input" type="text" class="input" value="CUSTOM DRAW">
+            </div>
+            
+            <div>
+              <label class="block mb-2">Edit Subtitle:</label>
+              <input id="custom-subtitle-input" type="text" class="input" value="YOUR CUSTOM DRAWING">
+            </div>
+            
+            <div>
+              <label class="block mb-2">Draw Type:</label>
+              <select id="custom-draw-type" class="select" onchange="toggleCustomDrawType()">
+                <option value="text">Text Items</option>
+                <option value="number">Number Range</option>
+              </select>
+            </div>
+            
+            <div id="custom-text-input-container">
+              <label class="block mb-2">Enter Items (one per line):</label>
+              <textarea id="custom-items-input" class="textarea" placeholder="Enter one item per line"></textarea>
+              <div class="flex gap-4 mt-2">
+                <button class="btn btn-primary flex-1" onclick="addCustomItems()">Add Items</button>
+                <div class="flex-1">
+                  <label class="block mb-2">Upload Items File:</label>
+                  <input type="file" accept=".txt,.csv" onchange="handleFileUpload(this, 'custom')" class="input">
+                </div>
+              </div>
+            </div>
+            
+            <div id="custom-number-input-container" style="display: none;">
+              <label class="block mb-2">Number Range:</label>
+              <div class="flex gap-4">
+                <div>
+                  <label class="block text-sm">Min</label>
+                  <input id="custom-min" type="number" min="1" value="1" class="input">
+                </div>
+                <div>
+                  <label class="block text-sm">Max</label>
+                  <input id="custom-max" type="number" min="2" value="100" class="input">
+                </div>
+              </div>
+              <button class="btn btn-primary w-full" onclick="generateCustomNumbers()">Generate Numbers</button>
+            </div>
+          </div>
+        </div>
+        
+        <div id="appearance-tab" class="tab-content">
+          <div class="space-y-4">
+            <div>
+              <label class="block mb-2">Select Shape:</label>
+              <select id="custom-shape" class="select">
+                <option value="rectangle">Rectangle</option>
+                <option value="circle">Circle</option>
+                <option value="rounded" selected>Rounded Rectangle</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block mb-2">Background Color:</label>
+              <select id="custom-bg-color" class="select" onchange="updateCustomBg()">
+                <option value="blue">Blue</option>
+                <option value="red">Red</option>
+                <option value="green">Green</option>
+                <option value="purple">Purple</option>
+                <option value="gray">Gray</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block mb-2">Item Color:</label>
+              <select id="custom-item-color" class="select">
+                <option value="yellow">Yellow</option>
+                <option value="blue">Blue</option>
+                <option value="green">Green</option>
+                <option value="red">Red</option>
+                <option value="purple">Purple</option>
+                <option value="gray">Gray</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div id="timing-tab" class="tab-content">
+          <div class="space-y-4">
+            <div>
+              <label class="block mb-2">Draw Time (seconds):</label>
+              <input id="custom-draw-time" type="range" min="5" max="60" value="45" class="w-full" oninput="updateDrawTimeValue('custom')">
+              <p id="custom-draw-time-value" class="text-center">45 seconds</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Countdown Display -->
+<div id="countdown-display" class="countdown" style="display: none;"></div>
+
+<script>
+  // Audio elements
+  let drumRoll = new Audio("https://free-sound-effects.net/mp3/03/free-sound-1674970809.mp3");
+  let winnerSound = new Audio("https://www.fesliyanstudios.com/play-mp3/6778");
+  let heartbeatSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2004/2004.wav");
+  
+  // Data storage
+  const data = {
+    batch: {
+      names: [],
+      title: "Batch 83 Geremyunhan",
+      subtitle: "Every 2nd Saturday Of the Month",
+      shape: "rectangle",
+      drawTime: 45,
+      isDrawing: false,
+      winner: "",
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null
+    },
+    brgy: {
+      names: [],
+      title: "BARANGAY JUDICIARY POBLACION",
+      subtitle: "MONTHLY MEET-UP",
+      shape: "rectangle",
+      drawTime: 45,
+      isDrawing: false,
+      winner: "",
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null
+    },
+    katoda: {
+      numbers: [],
+      title: "CATODA DRAW",
+      subtitle: "NUMBERS 1-45",
+      shape: "rectangle",
+      drawTime: 45,
+      isDrawing: false,
+      winner: null,
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      minNumber: 1,
+      maxNumber: 45
+    },
+    knights: {
+      numbers: [],
+      title: "KNIGHTS DRAW",
+      subtitle: "NUMBERS 1-25",
+      shape: "circle",
+      drawTime: 45,
+      isDrawing: false,
+      winner: null,
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      minNumber: 1,
+      maxNumber: 25
+    },
+    "first-month": {
+      numbers: [],
+      title: "1ST OF THE MONTH",
+      subtitle: "NUMBERS 1-30",
+      shape: "rounded",
+      drawTime: 45,
+      isDrawing: false,
+      winner: null,
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      minNumber: 1,
+      maxNumber: 30
+    },
+    custom: {
+      items: [],
+      title: "CUSTOM DRAW",
+      subtitle: "YOUR CUSTOM DRAWING",
+      shape: "rounded",
+      drawTime: 45,
+      isDrawing: false,
+      winner: "",
+      highlightIndex: null,
+      highlightInterval: null,
+      timerInterval: null,
+      drawType: "text",
+      minNumber: 1,
+      maxNumber: 100,
+      bgColor: "blue",
+      itemColor: "yellow"
+    }
+  };
+  
+  // Initialize the app
+  document.addEventListener("DOMContentLoaded", function() {
+    // Set current year in footer
+    document.getElementById("current-year").textContent = new Date().getFullYear();
+    
+    // Set current month in first-month page
+    document.getElementById("current-month").textContent = getMonthName();
+    
+    // Initialize all pages
+    initializePage("batch");
+    initializePage("brgy");
+    initializePage("katoda");
+    initializePage("knights");
+    initializePage("first-month");
+    initializePage("custom");
+    
+    // Show home page by default
+    showPage("home-page");
+  });
+  
+  // Helper functions
+  function getMonthName() {
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return months[new Date().getMonth()];
+  }
+  
+  function showPage(pageId) {
+    // Hide all pages
+    const pages = document.querySelectorAll(".page");
+    pages.forEach(page => {
+      page.classList.remove("active");
+    });
+    
+    // Show selected page
+    document.getElementById(pageId).classList.add("active");
+  }
+  
+  function toggleSettings(settingsId) {
+    const settings = document.getElementById(settingsId);
+    if (settings.style.display === "none") {
+      settings.style.display = "flex";
+    } else {
+      settings.style.display = "none";
+    }
+  }
+  
+  function showTab(tabId, tabElement) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll(".tab-content");
+    tabContents.forEach(tab => {
+      tab.classList.remove("active");
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabId).classList.add("active");
+    
+    // Update tab styles
+    const tabs = document.querySelectorAll(".tab");
+    tabs.forEach(tab => {
+      tab.classList.remove("active");
+    });
+    
+    tabElement.classList.add("active");
+  }
+  
+  function initializePage(type) {
+    if (type === "batch" || type === "brgy") {
+      // Initialize name-based pages
+      addNames(type);
+      
+      // Set up event listeners for settings
+      document.getElementById(`${type}-title-input`).addEventListener("change", function() {
+        data[type].title = this.value;
+        document.getElementById(`${type}-title`).textContent = this.value;
+      });
+      
+      document.getElementById(`${type}-subtitle-input`).addEventListener("change", function() {
+        data[type].subtitle = this.value;
+        document.getElementById(`${type}-subtitle`).textContent = this.value;
+      });
+      
+      document.getElementById(`${type}-shape`).addEventListener("change", function() {
+        data[type].shape = this.value;
+        renderItems(type);
+      });
+      
+      document.getElementById(`${type}-draw-time`).addEventListener("change", function() {
+        data[type].drawTime = parseInt(this.value) || 45;
+      });
+    } else if (type === "katoda" || type === "knights" || type === "first-month") {
+      // Initialize number-based pages
+      generateNumbers(type);
+      
+      // Set up event listeners for settings
+      document.getElementById(`${type}-title-input`).addEventListener("change", function() {
+        data[type].title = this.value;
+        document.getElementById(`${type}-title`).textContent = this.value;
+      });
+      
+      document.getElementById(`${type}-subtitle-input`).addEventListener("change", function() {
+        data[type].subtitle = this.value;
+        document.getElementById(`${type}-subtitle`).textContent = this.value;
+      });
+      
+      document.getElementById(`${type}-shape`).addEventListener("change", function() {
+        data[type].shape = this.value;
+        renderItems(type);
+      });
+      
+      document.getElementById(`${type}-draw-time`).addEventListener("change", function() {
+        data[type].drawTime = parseInt(this.value) || 45;
+      });
+      
+      document.getElementById(`${type}-min`).addEventListener("change", function() {
+        data[type].minNumber = parseInt(this.value) || 1;
+      });
+      
+      document.getElementById(`${type}-max`).addEventListener("change", function() {
+        data[type].maxNumber = parseInt(this.value) || 45;
+      });
+    } else if (type === "custom") {
+      // Initialize custom page
+      
+      // Set up event listeners for settings
+      document.getElementById(`${type}-title-input`).addEventListener("change", function() {
+        data[type].title = this.value;
+        document.getElementById(`${type}-title`).textContent = this.value;
+      });
+      
+      document.getElementById(`${type}-subtitle-input`).addEventListener("change", function() {
+        data[type].subtitle = this.value;
+        document.getElementById(`${type}-subtitle`).textContent = this.value;
+      });
+      
+      document.getElementById(`${type}-shape`).addEventListener("change", function() {
+        data[type].shape = this.value;
+        renderItems(type);
+      });
+      
+      document.getElementById(`${type}-draw-time`).addEventListener("change", function() {
+        data[type].drawTime = parseInt(this.value) || 45;
+        document.getElementById(`${type}-draw-time-value`).textContent = `${this.value} seconds`;
+      });
+    }
+  }
+  
+  function addNames(type) {
+    const input = document.getElementById(`${type}-names-input`).value;
+    if (input.trim()) {
+      const namesList = input.split("\n").map(name => name.trim()).filter(name => name !== "");
+      data[type].names = namesList;
+      renderItems(type);
+    }
+  }
+  
+  function handleFileUpload(fileInput, type) {
+    const file = fileInput.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const text = event.target.result;
+      if (text) {
+        const itemsList = text.split("\n").map(item => item.trim()).filter(item => item !== "");
+        
+        if (type === "batch" || type === "brgy") {
+          data[type].names = itemsList;
+          document.getElementById(`${type}-names-input`).value = itemsList.join("\n");
+        } else if (type === "custom") {
+          data[type].items = itemsList;
+          document.getElementById(`${type}-items-input`).value = itemsList.join("\n");
+        }
+        
+        renderItems(type);
+      }
+    };
+    reader.readAsText(file);
+  }
+  
+  function generateNumbers(type) {
+    const min = parseInt(document.getElementById(`${type}-min`).value) || 1;
+    const max = parseInt(document.getElementById(`${type}-max`).value) || 45;
+    
+    const nums = [];
+    for (let i = min; i <= max; i++) {
+      nums.push(i);
+    }
+    
+    data[type].numbers = nums;
+    data[type].minNumber = min;
+    data[type].maxNumber = max;
+    
+    renderItems(type);
+  }
+  
+  function toggleCustomDrawType() {
+    const drawType = document.getElementById("custom-draw-type").value;
+    data.custom.drawType = drawType;
+    
+    if (drawType === "text") {
+      document.getElementById("custom-text-input-container").style.display = "block";
+      document.getElementById("custom-number-input-container").style.display = "none";
+    } else {
+      document.getElementById("custom-text-input-container").style.display = "none";
+      document.getElementById("custom-number-input-container").style.display = "block";
+    }
+  }
+  
+  function addCustomItems() {
+    const input = document.getElementById("custom-items-input").value;
+    if (input.trim()) {
+      const itemsList = input.split("\n").map(item => item.trim()).filter(item => item !== "");
+      data.custom.items = itemsList;
+      renderItems("custom");
+    }
+  }
+  
+  function generateCustomNumbers() {
+    const min = parseInt(document.getElementById("custom-min").value) || 1;
+    const max = parseInt(document.getElementById("custom-max").value) || 100;
+    
+    const nums = [];
+    for (let i = min; i <= max; i++) {
+      nums.push(i.toString());
+    }
+    
+    data.custom.items = nums;
+    data.custom.minNumber = min;
+    data.custom.maxNumber = max;
+    
+    renderItems("custom");
+  }
+  
+  function updateCustomBg() {
+    const bgColor = document.getElementById("custom-bg-color").value;
+    data.custom.bgColor = bgColor;
+    
+    const customPage = document.getElementById("custom-page");
+    customPage.className = "page custom-bg";
+    
+    switch (bgColor) {
+      case "blue":
+        customPage.classList.add("bg-gradient-blue");
+        break;
+      case "red":
+        customPage.classList.add("bg-gradient-red");
+        break;
+      case "green":
+        customPage.classList.add("bg-gradient-green");
+        break;
+      case "purple":
+        customPage.classList.add("bg-gradient-purple");
+        break;
+      case "gray":
+        customPage.classList.add("bg-gradient-gray");
+        break;
+    }
+  }
+  
+  function updateDrawTimeValue(type) {
+    const value = document.getElementById(`${type}-draw-time`).value;
+    document.getElementById(`${type}-draw-time-value`).textContent = `${value} seconds`;
+    data[type].drawTime = parseInt(value);
+  }
+  
+  function renderItems(type) {
+    const grid = document.getElementById(`${type}-grid`);
+    grid.innerHTML = "";
+    
+    let items = [];
+    
+    if (type === "batch" || type === "brgy") {
+      items = data[type].names;
+    } else if (type === "katoda" || type === "knights" || type === "first-month") {
+      items = data[type].numbers;
+    } else if (type === "custom") {
+      items = data[type].items;
+    }
+    
+    items.forEach((item, index) => {
+      const itemElement = document.createElement("div");
+      
+      // Apply shape styles
+      let shapeClass = "";
+      if (data[type].shape === "rectangle") {
+        shapeClass = "rectangle";
+      } else if (data[type].shape === "circle") {
+        shapeClass = "circle";
+      } else {
+        shapeClass = "rounded";
+      }
+      
+      // Apply custom styles for custom page
+      if (type === "custom") {
+        const itemColor = document.getElementById("custom-item-color").value;
+        itemElement.style.backgroundColor = getItemBgColor(itemColor);
+        if (data.custom.shape === "rectangle") {
+          itemElement.style.border = `2px solid ${getItemBorderColor(itemColor)}`;
+        }
+      }
+      
+      itemElement.className = `item ${shapeClass}`;
+      itemElement.textContent = item;
+      itemElement.dataset.index = index;
+      
+      if (data[type].highlightIndex === index) {
+        itemElement.classList.add("highlight");
+      }
+      
+      grid.appendChild(itemElement);
+    });
+  }
+  
+  function getItemBgColor(color) {
+    switch (color) {
+      case "yellow": return "#fbd38d";
+      case "blue": return "#90cdf4";
+      case "green": return "#9ae6b4";
+      case "red": return "#feb2b2";
+      case "purple": return "#d6bcfa";
+      case "gray": return "#cbd5e0";
+      default: return "#fbd38d";
+    }
+  }
+  
+  function getItemBorderColor(color) {
+    switch (color) {
+      case "yellow": return "#dd6b20";
+      case "blue": return "#2b6cb0";
+      case "green": return "#276749";
+      case "red": return "#9b2c2c";
+      case "purple": return "#553c9a";
+      case "gray": return "#4a5568";
+      default: return "#dd6b20";
+    }
+  }
+  
+  function startDraw(type) {
+    let items = [];
+    
+    if (type === "batch" || type === "brgy") {
+      items = data[type].names;
+    } else if (type === "katoda" || type === "knights" || type === "first-month") {
+      items = data[type].numbers;
+    } else if (type === "custom") {
+      items = data[type].items;
+    }
+    
+    if (items.length === 0) {
+      alert("No items to draw");
+      return;
+    }
+    
+    data[type].isDrawing = true;
+    toggleSettings(`${type}-settings`);
+    data[type].winner = "";
+    
+    // Disable draw button
+    document.getElementById(`${type}-draw-btn`).disabled = true;
+    document.getElementById(`${type}-draw-btn`).classList.add("btn-disabled");
+    
+    // Start countdown
+    let count = 3;
+    const countdownDisplay = document.getElementById("countdown-display");
+    countdownDisplay.style.display = "block";
+    countdownDisplay.textContent = count;
+    
+    const countdownInterval = setInterval(() => {
+      count--;
+      countdownDisplay.textContent = count;
+      
+      if (count <= 0) {
+        clearInterval(countdownInterval);
+        countdownDisplay.style.display = "none";
+        startHighlighting(type);
+      }
+    }, 1000);
+  }
+  
+  function startHighlighting(type) {
+    heartbeatSound.loop = true;
+    heartbeatSound.play();
+    
+    let items = [];
+    if (type === "batch" || type === "brgy") {
+      items = data[type].names;
+    } else if (type === "katoda" || type === "knights" || type === "first-month") {
+      items = data[type].numbers;
+    } else if (type === "custom") {
+      items = data[type].items;
+    }
+    
+    let remainingTime = data[type].drawTime;
+    const countdownDisplay = document.getElementById("countdown-display");
+    countdownDisplay.style.display = "block";
+    countdownDisplay.textContent = remainingTime;
+    
+    // Start highlighting items randomly
+    data[type].highlightInterval = setInterval(() => {
+      const randomIndex = Math.floor(Math.random() * items.length);
+      data[type].highlightIndex = randomIndex;
+      renderItems(type);
+    }, 150);
+    
+    // Start countdown timer
+    data[type].timerInterval = setInterval(() => {
+      remainingTime--;
+      countdownDisplay.textContent = remainingTime;
+      
+      // Increase heartbeat intensity as countdown approaches zero
+      if (remainingTime <= 10) {
+        heartbeatSound.playbackRate = 1 + (10 - remainingTime) / 10;
+      }
+      
+      if (remainingTime <= 0) {
+        clearInterval(data[type].highlightInterval);
+        clearInterval(data[type].timerInterval);
+        countdownDisplay.style.display = "none";
+        selectWinner(type);
+      }
+    }, 1000);
+  }
+  
+  function selectWinner(type) {
+    heartbeatSound.pause();
+    heartbeatSound.currentTime = 0;
+    
+    winnerSound.play();
+    
+    let items = [];
+    if (type === "batch" || type === "brgy") {
+      items = data[type].names;
+    } else if (type === "katoda" || type === "knights" || type === "first-month") {
+      items = data[type].numbers;
+    } else if (type === "custom") {
+      items = data[type].items;
+    }
+    
+    const winnerIndex = Math.floor(Math.random() * items.length);
+    const winnerItem = items[winnerIndex];
+    
+    if (type === "batch" || type === "brgy" || type === "custom") {
+      data[type].winner = winnerItem;
+      document.getElementById(`${type}-winner`).textContent = winnerItem;
+    } else {
+      data[type].winner = winnerItem;
+      document.getElementById(`${type}-winner`).textContent = winnerItem;
+    }
+    
+    document.getElementById(`${type}-winner-display`).style.display = "block";
+    data[type].highlightIndex = null;
+    data[type].isDrawing = false;
+    
+    // Enable draw button
+    document.getElementById(`${type}-draw-btn`).disabled = false;
+    document.getElementById(`${type}-draw-btn`).classList.remove("btn-disabled");
+    
+    // Trigger confetti
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    
+    // Remove winner from the list
+    if (type === "batch" || type === "brgy") {
+      data[type].names.splice(winnerIndex, 1);
+    } else if (type === "katoda" || type === "knights" || type === "first-month") {
+      data[type].numbers.splice(winnerIndex, 1);
+    } else if (type === "custom") {
+      data[type].items.splice(winnerIndex, 1);
+    }
+    
+    renderItems(type);
+  }
+</script>
+</body>
+</html>
